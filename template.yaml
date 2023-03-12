@@ -1,0 +1,94 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  mail-send-sns
+
+  Sample SAM Template for mail-send-sns
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 10
+    MemorySize: 128
+
+Resources:
+  SNSTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: static-site-notice
+      Tags:
+        - Key: "Name"
+          Value: "portfolio-site"
+
+  EmailSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref SNSTopic
+      Protocol: email
+      Endpoint: akiyoshi_20038-test@yahoo.co.jp
+    DependsOn: SNSTopic
+
+  SnsSendFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: SnsSend/
+      Handler: app.sns_send_handler
+      Runtime: python3.9
+      Environment:
+        Variables:
+          TOPIC_ARN: !Ref SNSTopic
+      Policies:
+        - SNSPublishMessagePolicy:
+            TopicName: !GetAtt SNSTopic.TopicName
+
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /
+            Method: any
+
+  LineNoticeFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: LineNotice/
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      Architectures:
+        - x86_64
+
+      Events:
+        SNSTopicEvent:
+          Type: SNS
+          Properties:
+            Topic: !Ref SNSTopic
+
+  SnsSendFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${SnsSendFunction}
+
+  LineNoticeFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${LineNoticeFunction}
+
+Outputs:
+  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
+  # Find out more about other implicit resources you can reference within SAM
+  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
+  # HelloWorldApi:
+  #   Description: "API Gateway endpoint URL for Prod stage for Hello World function"
+  #   Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/"
+  SNSTopic:
+    Description: "SNS Topic ARN"
+    Value: !GetAtt SNSTopic.TopicArn
+  LineNoticeApi:
+    Description: "API Gateway endpoint URL for Prod stage for Hello World function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
+  LineNoticeFunction:
+    Description: "Line Notice Function ARN"
+    Value: !GetAtt LineNoticeFunction.Arn
+  LineNoticeFunctionIamRole:
+    Description: "Implicit IAM Role created for Line Notice Function"
+    Value: !GetAtt LineNoticeFunctionRole.Arn
