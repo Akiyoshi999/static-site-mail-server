@@ -88,7 +88,7 @@ def apigw_event_bad_no_message():
     }
 
 @pytest.fixture()
-def sns_event_bad():
+def sns_event_success():
     return {
   "Records": [
     {
