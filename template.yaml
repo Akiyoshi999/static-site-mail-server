@@ -12,6 +12,12 @@ Globals:
     MemorySize: 128
 
 Resources:
+  WebApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      OpenApiVersion: 3.0.1
+
   SNSTopic:
     Type: AWS::SNS::Topic
     Properties:
@@ -40,13 +46,13 @@ Resources:
       Policies:
         - SNSPublishMessagePolicy:
             TopicName: !GetAtt SNSTopic.TopicName
-
       Events:
         ApiEvent:
           Type: Api
           Properties:
             Path: /
             Method: post
+            RestApiId: !Ref WebApi
 
   LineNoticeFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
@@ -76,18 +82,12 @@ Resources:
       LogGroupName: !Sub /aws/lambda/${LineNoticeFunction}
 
 Outputs:
-  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
-  # Find out more about other implicit resources you can reference within SAM
-  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
-  # HelloWorldApi:
-  #   Description: "API Gateway endpoint URL for Prod stage for Hello World function"
-  #   Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/"
+  RestApiEndpoint:
+    Description: "API Gateway endpoint URL for Prod stage for Hello World function"
+    Value: !Sub "https://${WebApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
   SNSTopic:
     Description: "SNS Topic ARN"
     Value: !GetAtt SNSTopic.TopicArn
-  LineNoticeApi:
-    Description: "API Gateway endpoint URL for Prod stage for Hello World function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
   LineNoticeFunction:
     Description: "Line Notice Function ARN"
     Value: !GetAtt LineNoticeFunction.Arn
