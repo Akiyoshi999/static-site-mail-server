@@ -8,14 +8,13 @@ def sns_send_handler(event, context):
     sns = boto3.client('sns')
     try:
         formData = json.loads(event['body'])
-        message= f"\n差出人 : {formData['name']}\n差出人メール : {formData['email']}\n本文 : {formData['message']}"
-
+        message = f"\n差出人 : {formData['name']}\n差出人メール : {formData['email']}\n本文 : {formData['message']}"
         response = sns.publish(
             TopicArn=os.environ['TOPIC_ARN'],
             Message=message,
             Subject='自分のHPからのお問い合わせ',
         )
-    except botocore.exceptions.ClientError  as error:
+    except botocore.exceptions.ClientError as error:
         print(error)
         raise error
     
@@ -27,4 +26,3 @@ def sns_send_handler(event, context):
         'statusCode': 200,
         'body': json.dumps({'MessageId':response['MessageId']})
     }
-
