@@ -24,5 +24,9 @@ def sns_send_handler(event, context):
 
     return {
         'statusCode': 200,
-        'body': json.dumps({'MessageId':response['MessageId']})
+        'headers': {
+            "Access-Control-Allow-Headers" : "Content-Type",
+            "Access-Control-Allow-Origin" : "*",
+        },
+        'body': json.dumps({'MessageId' : response['MessageId']})
     }
